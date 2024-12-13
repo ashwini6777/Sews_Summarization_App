@@ -53,6 +53,6 @@ def filter_news_by_date_and_category(date, category, page):
         return jsonify({"error": "Unable to fetch news for this filter"}), 500
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,port=5002)
 
 

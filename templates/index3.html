@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>News App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Welcome, {{ email }}</h1>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger mb-3">Logout</a>
+
+    <form action="/subscribe" method="POST">
+        <h3>Subscribe to Categories</h3>
+        <div id="categories-container"></div>
+        <button type="submit" class="btn btn-primary mt-3">Subscribe</button>
+    </form>
+
+    <div id="news-container" class="row mt-5"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $.getJSON('/categories', function(categories) {
+            categories.forEach(function(category) {
+                $('#categories-container').append(`
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="categories" value="${category}">
+                        <label class="form-check-label">${category}</label>
+                    </div>
+                `);
+            });
+        });
+    });
+</script>
+</body>
+</html>

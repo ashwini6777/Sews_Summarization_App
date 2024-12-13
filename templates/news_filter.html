@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter News</title>
+</head>
+<body>
+    <h2>Filter News</h2>
+    <form method="GET" action="/news/filter">
+        <input type="date" name="date" id="date">
+        <select name="category" id="category">
+            <option value="">All Categories</option>
+            <option value="sports">Sports</option>
+            <option value="technology">Technology</option>
+            <option value="education">Education</option>
+        </select>
+        <button type="submit">Filter</button>
+    </form>
+    <div id="news-container">
+        <!-- News articles will be displayed here -->
+    </div>
+</body>
+</html>
