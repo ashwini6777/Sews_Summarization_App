@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortNewsApp</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .news-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+        .news-image {
+            width: 100%; 
+            border-radius: 5px;
+        }
+        .category-select {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4 text-center">ShortNewsApp</h1>
+        <form id="fetchForm" class="mb-4">
+            <div class="input-group">
+                <input type="url" id="newsUrl" class="form-control" placeholder="Enter news source URL" required>
+                <button type="submit" class="btn btn-primary">Fetch News</button>
+            </div>
+        </form>
+        <div id="news-grid" class="row">
+            <!-- News articles will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("fetchForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const url = document.getElementById("newsUrl").value;
+
+            const response = await fetch("/fetch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url }),
+            });
+
+            const articles = await response.json();
+            const newsGrid = document.getElementById("news-grid");
+            newsGrid.innerHTML = ""; // Clear existing news articles
+
+            articles.forEach((article) => {
+                // Sanitize the URL to create a valid ID
+                const sanitizedUrl = article.url.replace(/[^a-zA-Z0-9]/g, "_");
+
+                const articleCard = document.createElement("div");
+                articleCard.className = "col-12 mb-4";
+
+                articleCard.innerHTML = `
+                    <div class="news-card row g-0 align-items-center">
+                        <div class="col-md-4">
+                            <img src="${article.image_src}" alt="Image" class="news-image">
+                        </div>
+                        <div class="col-md-8 ps-3">
+                            <!-- Making the title clickable, redirecting to the original news -->
+                            <h3><a href="${article.url}" target="_blank">${article.title || "Untitled Article"}</a></h3>
+                            <p>${article.summary || "No summary available."}</p>
+                            <p><strong>Author:</strong> ${article.author || "Unknown"}</p>
+                            <label for="category-select-${sanitizedUrl}">Select Category:</label>
+                            <select class="form-control category-select" id="category-select-${sanitizedUrl}">
+                                <option value="">--Select Category--</option>
+                                <option value="sports">Sports</option>
+                                <option value="politics">Politics</option>
+                                <option value="technology">Technology</option>
+                                <option value="health">Health</option>
+                                <option value="education">Education</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="business">Business</option>
+                                <option value="food">Food</option>
+
+                            </select>
+                            <button class="btn btn-primary save-btn mt-3" 
+                                data-url="${article.url}" 
+                                data-summary="${article.summary}" 
+                                data-image-src="${article.image_src}" 
+                                data-author="${article.author || 'Unknown'}">Save</button>
+                        </div>
+                    </div>
+                `;
+
+                newsGrid.appendChild(articleCard);
+            });
+
+            // Add event listeners for save buttons
+            document.querySelectorAll(".save-btn").forEach((button) => {
+                button.addEventListener("click", async () => {
+                    const categorySelect = document.getElementById(`category-select-${button.dataset.url.replace(/[^a-zA-Z0-9]/g, "_")}`);
+                    const category = categorySelect.value;
+
+                    if (!category) {
+                        alert("Please select a category before saving.");
+                        return;
+                    }
+
+                    const response = await fetch("/add", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            url: button.dataset.url,
+                            summary: button.dataset.summary,
+                            image_src: button.dataset.imageSrc || "",
+                            author: button.dataset.author,
+                            category: category,
+                            keywords_csv: "default,keywords", // Default keywords
+                            labels_csv: "user,label" // Default labels
+                        }), 
+                    });
+
+                    const result = await response.json();
+                    alert(result.message);
+                });
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

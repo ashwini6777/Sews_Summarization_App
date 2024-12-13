@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .news-card img {
+            width: 100%;
+            height: auto;
+        }
+        .news-card .card-body {
+            padding: 15px;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+        #prev-btn, #next-btn {
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">News App</h1>
+
+    <!-- Off-Canvas for Filters -->
+    <button class="btn btn-primary" data-bs-toggle="offcanvas" href="#filtersOffCanvas" role="button" aria-controls="filtersOffCanvas">Filter News</button>
+
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffCanvas" aria-labelledby="filtersOffCanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="filtersOffCanvasLabel">Filter News</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <!-- Date Filter -->
+            <div class="mb-4">
+                <label for="news-date" class="form-label">Select Date</label>
+                <input type="date" id="news-date" class="form-control" />
+            </div>
+
+            <!-- Category Filter -->
+            <div class="mb-4">
+                <label for="news-category" class="form-label">Select Category</label>
+                <select id="news-category" class="form-control">
+                    <option value="">All Categories</option>
+                    <option value="sports">Sports</option>
+                    <option value="education">Education</option>
+                    <option value="politics">Politics</option>
+                    <option value="technology">Technology</option>
+                    <option value="health">Health</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="business">Business</option>
+                    <option value="food">Food</option>
+
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- News List -->
+    <div id="news-container" class="row justify-content-center">
+        <p class="text-center" id="no-news-message" style="display: none;">No news found for this filter.</p>
+    </div>
+
+    <!-- Pagination (Next / Previous) -->
+    <div class="btn-group mt-4 mb-4 mb-md-5">
+        <button id="prev-btn" class="btn btn-primary w-auto" onclick="loadPreviousArticle()" disabled>Previous</button>
+
+        <span id="page-info" class="d-flex align-items-center justify-content-center mx-3"></span>
+
+        <button id="next-btn" class="btn btn-primary w-auto" onclick="loadNextArticle()" disabled>Next</button>
+    </div>
+        
+</div>
+
+<!-- Full News Modal -->
+<div class="modal fade" id="newsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newsModalLabel"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <iframe id="news-iframe" src="" title="News Article"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    const dateInput = document.getElementById('news-date');
+    const categoryInput = document.getElementById('news-category');
+    const newsContainer = document.getElementById('news-container');
+    const noNewsMessage = document.getElementById('no-news-message');
+    const pageInfo = document.getElementById('page-info');
+
+    dateInput.addEventListener('change', function() {
+        fetchFilteredNews();
+    });
+
+    categoryInput.addEventListener('change', function() {
+        fetchFilteredNews();
+    });
+
+function fetchFilteredNews() {
+    const date = dateInput.value;
+    const category = categoryInput.value;
+
+    let url = `/news/filter/date/${date || 'all'}/${category || 'all'}/${currentPage}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const articles = data.articles;
+            totalPages = data.totalPages;
+            newsContainer.innerHTML = '';
+            
+            if (articles.length === 0) {
+                noNewsMessage.style.display = 'block';
+                document.getElementById('prev-btn').disabled = true;
+                document.getElementById('next-btn').disabled = true;
+                return;
+            } else {
+                noNewsMessage.style.display = 'none';
+                articles.forEach(article => {
+                    const newsCard = document.createElement('div');
+                    newsCard.classList.add('col-md-6', 'mb-3', 'd-flex', 'justify-content-center', 'news-card');
+                    newsCard.innerHTML = `
+                        <div class="card h-100">
+                            <img src="${article.nart_img_src}" class="card-img-top" alt="News Image">
+                            <div class="card-body">
+                 
+                                <h5 class="card-title">${article.nart_summary}</h5>
+                                <h6 class="card-title">${article.nart_pub_date}</h6>
+                                <button class="btn btn-primary" onclick="viewFullNews('${article.nart_url}')">View Full News</button>
+                            </div>
+                        </div>
+                    `;
+                    newsContainer.appendChild(newsCard);
+                });
+                
+                // Update the buttons to enable/disable as required
+                updatePaginationButtons();
+            }
+
+            pageInfo.innerHTML = `Page ${currentPage} of ${totalPages}`;
+        })
+        .catch(() => {
+            alert('Error fetching news. Please try again.');
+        });
+}
+
+function loadNextArticle() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        fetchFilteredNews();
+    }
+}
+
+function loadPreviousArticle() {
+    if (currentPage > 1) {
+        currentPage--;
+        fetchFilteredNews();
+    }
+}
+
+function updatePaginationButtons() {
+    document.getElementById('prev-btn').disabled = (currentPage === 1);
+    document.getElementById('next-btn').disabled = (currentPage === totalPages);
+}
+
+function viewFullNews(newsUrl) {
+    const newsModalLabel = document.getElementById('newsModalLabel');
+    const newsIframe = document.getElementById('news-iframe');
+
+    newsIframe.src = newsUrl;
+    newsModalLabel.textContent = 'Full News Article';
+
+    const newsModal = new bootstrap.Modal(document.getElementById('newsModal'));
+    newsModal.show();
+}
+
+</script>
+
+</body>
+</html>
+
+
